@@ -5,7 +5,7 @@ import {androidpublisher} from 'googleapis'
 import assert from 'assert'
 
 var debug = Debug('playup')
-var publisher = androidpublisher('v2')
+var publisher = androidpublisher('v3')
 var versionCodes = []
 
 export default class Upload {
