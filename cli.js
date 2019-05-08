@@ -1,49 +1,48 @@
 #!/usr/bin/env node
+const Upload = require( "./lib/upload" );
+const fs     = require( "fs" );
+const fmLog  = require( "fm-log" );
 
-var argv = require('yargs')
-  .usage('Usage: $0 [options]')
-  .demand(1)
-  .option('t', {
-    alias: 'track',
-    type: 'string',
-    default: 'alpha'
-  })
-  .option('a', {
-    alias: 'auth',
-    describe: 'JSON file that contains private key and client email',
-    demand: true
-  })
-  .option('r', {
-    alias: 'recent-changes',
-    type: 'array'
-  })
-  .help('h')
-  .argv
+const argParser = require( "yargs" )
+	.usage( "Usage: $0 [options]" )
+	.demand( 1 )
+	.option( "t", {
+		alias : "track",
+		type : "string",
+		default : "alpha"
+	} )
+	.option( "a", {
+		alias : "auth",
+		describe : "JSON file that contains private key and client email",
+		demand : true
+	} )
+	.option( "v", {
+		alias : "verbose",
+		type : "boolean",
+		default : false
+	} )
+	.help( "h" );
 
-var fs = require('fs')
-var assert = require('assert')
+function run( argv ) {
+	const apk = argv._[ 0 ];
 
-var authJSON = JSON.parse(fs.readFileSync(argv.auth)) // assume a JSON
-var options = {
-  track: argv.track,
-  obbs: argv._.slice(1)
+	const upload = new Upload( fs.readFileSync( argv.auth ) );
+
+
+	if( !argv.verbose ) {
+		fmLog.logFactory.require( fmLog.LogLevels.INFO );
+	}
+
+	if( argv.track ) {
+		upload.track = argv.track;
+	}
+
+	return upload.publish( apk )
+		.catch( err => {
+			// eslint-disable-next-line no-console
+			console.error( err.stack );
+			process.exit( 1 );
+		} );
 }
 
-if (argv.recentChanges) {
-  options.recentChanges = {}
-  argv.recentChanges.forEach(function (change) {
-    assert.notEqual(change.indexOf('='), -1, 'Unable to parse recent changes')
-
-    var parts = change.split('=')
-    assert.equal(parts.length, 2, 'Unable to parse recent changes')
-
-    options.recentChanges[parts[0]] = parts[1]
-  })
-}
-
-var publisher = require('./lib')(authJSON)
-publisher.upload(argv._[0], options)
-.catch(function (err) {
-  console.error(err.stack)
-  process.exit(1)
-})
+run( argParser.argv );
